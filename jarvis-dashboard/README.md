@@ -22,10 +22,10 @@ Open http://localhost:3000 and enjoy the boot sequence.
 
 ### Enable the live AI chat
 
-Create `jarvis-dashboard/.env.local` with your Anthropic API key:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
+```bash
+cd jarvis-dashboard
+cp .env.local.example .env.local
+# then edit .env.local and paste your key from https://console.anthropic.com/settings/keys
 ```
 
 Restart the dev server and the JARVIS chat answers with real intelligence — it knows your portfolio, the market board, your watchlists, Higgsfield credits, Drive files, and the host machine's vitals. Without a key, the chat stays in offline mode with scripted replies. The `/api/jarvis` route sanitizes the conversation history before every call (drops empty turns, enforces a leading user message) so malformed histories can never trigger `400 user messages must have non-empty content`.
