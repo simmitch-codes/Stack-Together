@@ -7,7 +7,7 @@ An Iron Man–style HUD built with Next.js (App Router). One screen, everything 
 - **Higgsfield** — plan + render credits via the Higgsfield MCP connector.
 - **Google Drive** — recent files via the Drive MCP connector.
 - **AI Market Intel** — heuristic ideas generated from the live portfolio/watchlist/quote data (demo output, not financial advice).
-- **JARVIS chat** — interactive command line that answers questions about your portfolio, the market, the time, and more.
+- **JARVIS chat** — a real AI butler powered by Claude (`claude-opus-4-8`) via `/api/jarvis`, with the dashboard's live data in its system prompt. Falls back to canned in-character replies when no API key is configured.
 - **Module bays** — interactive placeholders (Voice, Smart Home, Calendar, Comms, Music, Security, Weather, Mark VII Suit) ready to be wired to future MCP connectors.
 
 ## Run it
@@ -19,6 +19,16 @@ npm run dev
 ```
 
 Open http://localhost:3000 and enjoy the boot sequence.
+
+### Enable the live AI chat
+
+Create `jarvis-dashboard/.env.local` with your Anthropic API key:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Restart the dev server and the JARVIS chat answers with real intelligence — it knows your portfolio, the market board, your watchlists, Higgsfield credits, Drive files, and the host machine's vitals. Without a key, the chat stays in offline mode with scripted replies. The `/api/jarvis` route sanitizes the conversation history before every call (drops empty turns, enforces a leading user message) so malformed histories can never trigger `400 user messages must have non-empty content`.
 
 ## Refreshing connector data
 

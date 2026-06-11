@@ -151,19 +151,54 @@ function JarvisChat() {
     { who: 'ai', text: 'J.A.R.V.I.S. online. What can I search for you, sir?' },
   ]);
   const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [log]);
+  }, [log, busy]);
 
-  const submit = (e) => {
+  // Reveal the reply progressively for the HUD typewriter feel.
+  const typeOut = (text) => {
+    setLog((l) => [...l, { who: 'ai', text: '' }]);
+    let i = 0;
+    const step = Math.max(1, Math.round(text.length / 80));
+    const id = setInterval(() => {
+      i = Math.min(text.length, i + step);
+      setLog((l) => {
+        const copy = l.slice();
+        copy[copy.length - 1] = { who: 'ai', text: text.slice(0, i) };
+        return copy;
+      });
+      if (i >= text.length) clearInterval(id);
+    }, 16);
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
     const q = input.trim();
-    if (!q) return;
+    if (!q || busy) return; // never send empty content to the API
     setInput('');
-    setLog((l) => [...l, { who: 'me', text: q }]);
-    setTimeout(() => setLog((l) => [...l, { who: 'ai', text: jarvisReply(q) }]), 450);
+    const nextLog = [...log, { who: 'me', text: q }];
+    setLog(nextLog);
+    setBusy(true);
+    try {
+      const history = nextLog
+        .filter((m) => m.text && m.text.trim())
+        .map((m) => ({ role: m.who === 'me' ? 'user' : 'assistant', content: m.text }));
+      const r = await fetch('/api/jarvis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.reply) throw new Error(data.error || 'api_error');
+      typeOut(data.reply);
+    } catch {
+      typeOut(`${jarvisReply(q)} [offline mode — set ANTHROPIC_API_KEY for live AI]`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -176,14 +211,16 @@ function JarvisChat() {
             {m.text}
           </div>
         ))}
+        {busy && <div className="ai">JARVIS: processing ▍</div>}
         <div ref={endRef} />
       </div>
       <form onSubmit={submit}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="What can I search for you, sir?"
+          placeholder={busy ? 'Processing, sir…' : 'What can I search for you, sir?'}
           aria-label="Ask JARVIS"
+          disabled={busy}
         />
       </form>
     </div>
